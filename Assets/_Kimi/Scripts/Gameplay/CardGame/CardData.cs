@@ -1,32 +1,43 @@
-public class CardData
+using System;
+using _Kimi.Scripts.Core.CardGame;
+
+namespace _Kimi.Scripts.Gameplay.CardGame
 {
-    public Suit CardSuit { get; private set; }
-    public Rank CardRank { get; private set; }
-
-    public CardData(Suit suit, Rank rank)
+    public class CardData
     {
-        this.CardSuit = suit;
-        this.CardRank = rank;
-    }
+        public Suit CardSuit { get; }
+        public Rank CardRank { get; }
 
-    public override bool Equals(object obj)
-    {
-        if (obj is CardData card)
+        public CardData(Suit suit, Rank rank)
         {
-            return card.CardRank == this.CardRank && card.CardSuit == this.CardSuit;
-        } else
-        {
-            return false;
+            this.CardSuit = suit;
+            this.CardRank = rank;
         }
-    }
 
-    public override int GetHashCode()
-    {
-        return base.GetHashCode();
-    }
+        public override bool Equals(object obj)
+        {
+            if (obj is CardData card)
+            {
+                return this.Equals(card);
+            } else
+            {
+                return false;
+            }
+        }
 
-    public override string ToString()
-    {
-        return $"{this.CardRank} of {this.CardSuit}";
+        private bool Equals(CardData other)
+        {
+            return CardSuit == other.CardSuit && CardRank == other.CardRank;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine((int)CardSuit, (int)CardRank);
+        }
+
+        public override string ToString()
+        {
+            return $"{this.CardRank} of {this.CardSuit}";
+        }
     }
 }

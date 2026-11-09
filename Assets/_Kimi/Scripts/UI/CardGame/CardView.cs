@@ -1,42 +1,46 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(CanvasGroup), typeof(Image), typeof(Button))]
-class CardView: MonoBehaviour
+namespace _Kimi.Scripts.UI.CardGame
 {
-    [SerializeField] private CanvasGroup _canGroup;
-    [SerializeField] private Image _image;
-    [SerializeField] private Button _button;
-    public event Action<CardView> OnCardClicked;
-
-    private void Awake()
+    [RequireComponent(typeof(CanvasGroup), typeof(Image), typeof(Button))]
+    public class CardView: MonoBehaviour
     {
-        _canGroup = GetComponent<CanvasGroup>();
-        _image = GetComponent<Image>();
-        _button = GetComponent<Button>();
-    }
+        [SerializeField] private CanvasGroup canGroup;
+        [SerializeField] private Image image;
+        [SerializeField] private Button button;
+        public event Action<CardView> OnCardClicked;
 
-    private void Start()
-    {
-        _button.onClick.AddListener(() =>
+        private void Awake()
         {
-            OnCardClicked?.Invoke(this);
-        });
-    }
+            canGroup = GetComponent<CanvasGroup>();
+            image = GetComponent<Image>();
+            button = GetComponent<Button>();
+        }
 
-    public void SetVisible(bool visible)
-    {
-        _canGroup.alpha = visible ? 1.0f : 0.0f;
-    }
+        private void Start()
+        {
+            button.onClick.AddListener(() =>
+            {
+                OnCardClicked?.Invoke(this);
+            });
+        }
 
-    public void SetClickable(bool clickable)
-    {
-        _canGroup.blocksRaycasts = clickable;
-    }
+        public void SetVisible(bool visible)
+        {
+            canGroup.alpha = visible ? 1.0f : 0.0f;
+        }
 
-    public void SetSprite(Sprite sprite)
-    {
-        _image.sprite = sprite;
+        public void SetClickable(bool clickable)
+        {
+            canGroup.blocksRaycasts = clickable;
+        }
+
+        public void SetSprite(Sprite sprite)
+        {
+            image.sprite = sprite;
+        }
     }
 }

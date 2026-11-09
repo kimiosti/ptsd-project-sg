@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
 
-public static class ListExtensions
+namespace _Kimi.Scripts.Core.Utils
 {
-    public static void Shuffle<T>(this IList<T> list)
+    public static class ListExtensions
     {
-        var randomGenerator = new Random();
-
-        for (int i=0; i < list.Count-2; i++)
+        public static void Shuffle<T>(this IList<T> list)
         {
-            var randomSeed = randomGenerator.Next(i+1, list.Count);
-            (list[randomSeed], list[i]) = (list[i], list[randomSeed]);
+            var randomGenerator = new Random();
+
+            for (var i=0; i < list.Count-2; i++)
+            {
+                var randomSeed = randomGenerator.Next(i+1, list.Count);
+                (list[randomSeed], list[i]) = (list[i], list[randomSeed]);
+            }
         }
     }
 }

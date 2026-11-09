@@ -1,44 +1,49 @@
 using System.Collections.Generic;
+using _Kimi.Scripts.Gameplay.CardGame;
+using _Kimi.Scripts.UI.CardGame;
 
 // TODO - implement behaviour to pick covered cards
 
-class CpuHandController: HandController
+namespace _Kimi.Scripts.Core.CardGame
 {
-    public void Awake()
+    public class CpuHandController: HandController
     {
-        this._isPlayer = false;
-    }
-
-    public CardData PlayCard(CardData topOfPile)
-    {
-        if (this.HandSize > 0)
+        public void Awake()
         {
-            return this.PickBest(this._hand, topOfPile);
-        } else if (this.HandSize == 0 && this.OpenCards > 0)
-        {
-            return this.PickBest(this._tableOpen, topOfPile);
-        } else
-        {
-            // modify this
-            return null;
+            this.IsPlayer = false;
         }
-    }
 
-    private CardData PickBest(Dictionary<CardView, CardData> collection, CardData topOfPile)
-    {
-        foreach (var entry in collection)
+        public CardData PlayCard(CardData topOfPile)
         {
-            if (
-                topOfPile == null
-                || ((int)topOfPile.CardRank == 2)
-                || ((int)topOfPile.CardRank == 5 && topOfPile.CardRank >= entry.Value.CardRank)
-                || (((int)topOfPile.CardRank != 5) && topOfPile.CardRank <= entry.Value.CardRank)
-            )
+            if (this.handSize > 0)
             {
-                this.ToggleSelect(entry.Value);
-                return entry.Value;
+                return this.PickBest(this.Hand, topOfPile);
+            } else if (this.handSize == 0 && this.openCards > 0)
+            {
+                return this.PickBest(this.TableOpen, topOfPile);
+            } else
+            {
+                // modify this
+                return null;
             }
         }
-        return null;
+
+        private CardData PickBest(Dictionary<CardView, CardData> collection, CardData topOfPile)
+        {
+            foreach (var entry in collection)
+            {
+                if (
+                    topOfPile == null
+                    || ((int)topOfPile.CardRank == 2)
+                    || ((int)topOfPile.CardRank == 5 && topOfPile.CardRank >= entry.Value.CardRank)
+                    || (((int)topOfPile.CardRank != 5) && topOfPile.CardRank <= entry.Value.CardRank)
+                )
+                {
+                    this.ToggleSelect(entry.Value);
+                    return entry.Value;
+                }
+            }
+            return null;
+        }
     }
 }

@@ -1,234 +1,229 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using _Kimi.Scripts.Core.Utils;
+using _Kimi.Scripts.Gameplay.CardGame;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // TODO - implement CPU exchange behavior
 // TODO - check game win conditions
 
-class CardGameController: MonoBehaviour
+namespace _Kimi.Scripts.Core.CardGame
 {
-    private List<CardData> _deck;
-    private GameState _gameState;
-    [SerializeField] private PlayerHandController _playerHandController;
-    [SerializeField] private CpuHandController _cpuHandController;
-    [SerializeField] private DeckPileController _deckAndPileController;
-
-    private void Awake()
+    public class CardGameController: MonoBehaviour
     {
-        this._playerHandController.OnCardClicked += HandleCardClick;
-        this._deckAndPileController.OnPileClicked += HandlePileClick;
-    }
+        private List<CardData> _deck;
+        private GameState _gameState;
+        [SerializeField] private PlayerHandController playerHandController;
+        [SerializeField] private CpuHandController cpuHandController;
+        [SerializeField] private DeckPileController deckAndPileController;
 
-    private void Start()
-    {
-        _deck = GenerateShuffledDeck();
-
-        _deckAndPileController.ShowDeck(_deck);
-        _deckAndPileController.ShowEmptyPile();
-
-        for (int i=0; i<9; i++)
+        private void Awake()
         {
-            var playerCard = _deck[0];
-            var cpuCard = _deck[1];
-
-            _playerHandController.Deal(
-                i < 3 ? FieldType.TableCovered : (i < 6 ? FieldType.TableOpen : FieldType.Hand),
-                playerCard
-            );
-            _cpuHandController.Deal(
-                i < 3 ? FieldType.TableCovered : (i < 6 ? FieldType.TableOpen : FieldType.Hand),
-                cpuCard
-            );
-
-            _deck.Remove(playerCard);
-            _deckAndPileController.Draw(playerCard);
-            _deck.Remove(cpuCard);
-            _deckAndPileController.Draw(cpuCard);
+            this.playerHandController.OnCardClicked += HandleCardClick;
+            this.deckAndPileController.OnPileClicked += HandlePileClick;
         }
 
-        _gameState = GameState.Exchange;
-    }
-
-    private List<CardData> GenerateShuffledDeck()
-    {
-        var deck = new List<CardData>();
-
-        foreach (Suit suit in Enum.GetValues(typeof(Suit)))
+        private void Start()
         {
-            foreach (Rank rank in Enum.GetValues(typeof(Rank)))
+            _deck = GenerateShuffledDeck();
+
+            deckAndPileController.ShowDeck(_deck);
+            deckAndPileController.ShowEmptyPile();
+
+            for (var i=0; i<9; i++)
             {
-                deck.Add(new CardData(suit, rank));
+                var playerCard = _deck[0];
+                var cpuCard = _deck[1];
+
+                playerHandController.Deal(
+                    i < 3 ? FieldType.TableCovered : (i < 6 ? FieldType.TableOpen : FieldType.Hand),
+                    playerCard
+                );
+                cpuHandController.Deal(
+                    i < 3 ? FieldType.TableCovered : (i < 6 ? FieldType.TableOpen : FieldType.Hand),
+                    cpuCard
+                );
+
+                _deck.Remove(playerCard);
+                deckAndPileController.Draw(playerCard);
+                _deck.Remove(cpuCard);
+                deckAndPileController.Draw(cpuCard);
+            }
+
+            _gameState = GameState.Exchange;
+        }
+
+        private static List<CardData> GenerateShuffledDeck()
+        {
+            var deck = 
+            (
+                from Suit suit in Enum.GetValues(typeof(Suit))
+                from Rank rank in Enum.GetValues(typeof(Rank)
+            ) select new CardData(suit, rank)).ToList();
+
+            deck.Shuffle();
+            return deck;
+        }
+
+        private void HandleCardClick(FieldType field, CardData card)
+        {
+            switch (this._gameState)
+            {
+                case GameState.Exchange:
+                    if (field == FieldType.Hand)
+                    {
+                        this.playerHandController.ToggleSelect(card);
+
+                        if (this.playerHandController.Selected.Count > 1)
+                        {
+                            this.playerHandController.ToggleSelect(this.playerHandController.Selected[0]);
+                        }
+                    } else if (field == FieldType.TableOpen && this.playerHandController.Selected.Count > 0)
+                    {
+                        this.playerHandController.SwapCards(card, this.playerHandController.Selected[0]);
+                    }
+                    break;
+
+                default:
+                    if (
+                        field == FieldType.Hand
+                        || (field == FieldType.TableOpen && this.playerHandController.handSize == 0)
+                    )
+                    {
+                        if (MoveChecker.IsMoveAdmissible(
+                                this.deckAndPileController.TopOfPile,
+                                card
+                            ))
+                        {
+                            this.playerHandController.ToggleSelect(card);
+                            if (this.playerHandController.Selected.Count > 1)
+                            {
+                                List<CardData> toDeselect = new();
+                                foreach (var selectedCard in this.playerHandController.Selected)
+                                {
+                                    if (selectedCard.CardRank != card.CardRank) toDeselect.Add(selectedCard);
+                                }
+                                foreach (var cardToDeselect in toDeselect)
+                                {
+                                    this.playerHandController.ToggleSelect(cardToDeselect);
+                                }
+                            }
+                        }
+                    } else if (
+                        field == FieldType.TableCovered
+                        && this.playerHandController.handSize == 0
+                        && this.playerHandController.openCards == 0
+                    )
+                    {
+                        List<CardData> toDeselect = new(this.playerHandController.Selected);
+                        foreach (var cardToDeselect in toDeselect)
+                        {
+                            this.playerHandController.ToggleSelect(cardToDeselect);
+                        }
+                        this.playerHandController.ToggleSelect(card);
+                    }
+                    break;
             }
         }
 
-        deck.Shuffle();
-        return deck;
-    }
-
-    private void HandleCardClick(FieldType field, CardData card)
-    {
-        switch (this._gameState)
+        private void HandlePileClick()
         {
-            case GameState.Exchange:
-                if (field == FieldType.Hand)
-                {
-                    this._playerHandController.ToggleSelect(card);
+            switch (this._gameState)
+            {
+                case GameState.Exchange:
+                    // TODO - implement CPU exchange behaviour
+                    this._gameState = GameState.Play;
+                    break;
 
-                    if (this._playerHandController.Selected.Count > 1)
+                default:
+                    if (this.playerHandController.Selected.Count > 0)
                     {
-                        this._playerHandController.ToggleSelect(this._playerHandController.Selected[0]);
-                    }
-                } else if (field == FieldType.TableOpen && this._playerHandController.Selected.Count > 0)
-                {
-                    this._playerHandController.SwapCards(card, this._playerHandController.Selected[0]);
-                }
-                break;
-
-            default:
-                if (
-                    field == FieldType.Hand
-                    || (field == FieldType.TableOpen && this._playerHandController.HandSize == 0)
-                )
-                {
-                    if (MoveChecker.IsMoveAdmissible(
-                        this._deckAndPileController.TopOfPile,
-                        card
-                    ))
-                    {
-                        this._playerHandController.ToggleSelect(card);
-                        if (this._playerHandController.Selected.Count > 1)
+                        foreach (var selectedCard in this.playerHandController.Selected)
                         {
-                            List<CardData> toDeselect = new();
-                            foreach (var selectedCard in this._playerHandController.Selected)
-                            {
-                                if (selectedCard.CardRank != card.CardRank) toDeselect.Add(selectedCard);
-                            }
-                            foreach (var cardToDeselect in toDeselect)
-                            {
-                                this._playerHandController.ToggleSelect(cardToDeselect);
-                            }
+                            this.deckAndPileController.AddToPile(selectedCard);
+                            this.CheckAndFlushPile();
                         }
-                    }
-                } else if (
-                    field == FieldType.TableCovered
-                    && this._playerHandController.HandSize == 0
-                    && this._playerHandController.OpenCards == 0
-                )
-                {
-                    List<CardData> toDeselect = new(this._playerHandController.Selected);
-                    foreach (var cardToDeselect in toDeselect)
-                    {
-                        this._playerHandController.ToggleSelect(cardToDeselect);
-                    }
-                    this._playerHandController.ToggleSelect(card);
-                }
-                break;
-        }
-    }
-
-    private void HandlePileClick()
-    {
-        switch (this._gameState)
-        {
-            case GameState.Exchange:
-                // TODO - implement CPU exchange behaviour
-                this._gameState = GameState.Play;
-                break;
-
-            default:
-                // player discards
-                // check for pile flushing
-                // check move admissibility, player draws
-                // check if CPU has to draw
-                // CPU plays admissible card
-                // check move admissibility, CPU draws
-                // check if player has to draw
-
-                if (this._playerHandController.Selected.Count > 0)
-                {
-                    foreach (var selectedCard in this._playerHandController.Selected)
-                    {
-                        this._deckAndPileController.AddToPile(selectedCard);
-                        this.CheckAndFlushPile();
-                    }
-                    this._playerHandController.PlaySelected();
+                        this.playerHandController.PlaySelected();
                     
-                    this.CheckMoveAdmissibilityAndPickUpPile(this._playerHandController);
+                        this.CheckMoveAdmissibilityAndPickUpPile(this.playerHandController);
 
-                    this.DrawFromDeck(this._playerHandController);
+                        this.DrawFromDeck(this.playerHandController);
 
-                    this.CheckMovePossibilityAndPickUpPile(this._cpuHandController);
+                        this.CheckMovePossibilityAndPickUpPile(this.cpuHandController);
 
-                    this._deckAndPileController.AddToPile(
-                        this._cpuHandController.PlayCard(this._deckAndPileController.TopOfPile)
-                    );
-                    this.CheckAndFlushPile();
-                    this._cpuHandController.PlaySelected();
+                        this.deckAndPileController.AddToPile(
+                            this.cpuHandController.PlayCard(this.deckAndPileController.TopOfPile)
+                        );
+                        this.CheckAndFlushPile();
+                        this.cpuHandController.PlaySelected();
 
-                    this.DrawFromDeck(this._cpuHandController);
+                        this.DrawFromDeck(this.cpuHandController);
 
-                    this.CheckMoveAdmissibilityAndPickUpPile(this._cpuHandController);
+                        this.CheckMoveAdmissibilityAndPickUpPile(this.cpuHandController);
 
-                    this.CheckMovePossibilityAndPickUpPile(this._playerHandController);
-                }
-                break;
+                        this.CheckMovePossibilityAndPickUpPile(this.playerHandController);
+                    }
+                    break;
+            }
         }
-    }
 
-    private void CheckAndFlushPile()
-    {
-        var pile = this._deckAndPileController.GetPileContent();
-        if (
-            ((int)this._deckAndPileController.TopOfPile.CardRank) == 10
-            || (
-                pile.Count > 4
-                && pile[^1] == pile[^2]
-                && pile[^2] == pile[^3]
-                && pile[^3] == pile[^4]
-            )
-        ) this._deckAndPileController.FlushPile();
-    }
-
-    private void CheckMoveAdmissibilityAndPickUpPile(HandController player)
-    {
-        var pile = this._deckAndPileController.GetPileContent();
-        if (
-            pile.Count > 2
-            && !MoveChecker.IsMoveAdmissible(pile[^2], pile[^1])
-        ) this.PickUpPile(player);
-    }
-
-    private void PickUpPile(HandController player)
-    {
-        foreach (var card in this._deckAndPileController.GetPileContent())
+        private void CheckAndFlushPile()
         {
-            player.Deal(FieldType.Hand, card);
+            var pile = this.deckAndPileController.GetPileContent();
+            if (
+                ((int)this.deckAndPileController.TopOfPile.CardRank) == 10
+                || (
+                    pile.Count > 4
+                    && pile[^1] == pile[^2]
+                    && pile[^2] == pile[^3]
+                    && pile[^3] == pile[^4]
+                )
+            ) this.deckAndPileController.FlushPile();
         }
-        this._deckAndPileController.FlushPile();
-    }
 
-    private void DrawFromDeck(HandController player)
-    {
-        while (player.HandSize < 3 && this._deck.Count > 0)
+        private void CheckMoveAdmissibilityAndPickUpPile(HandController player)
         {
-            this._deckAndPileController.Draw(this._deck[0]);
-            player.Deal(FieldType.Hand, this._deck[0]);
-            this._deck.Remove(this._deck[0]);
+            var pile = this.deckAndPileController.GetPileContent();
+            if (
+                pile.Count > 2
+                && !MoveChecker.IsMoveAdmissible(pile[^2], pile[^1])
+            ) this.PickUpPile(player);
         }
-    }
 
-    private void CheckMovePossibilityAndPickUpPile(HandController player)
-    {
-        if (
-            (
-                player.CountAvailableMoves(FieldType.Hand, this._deckAndPileController.TopOfPile) == 0
-                && player.HandSize != 0
-            )
-            || (
-                player.CountAvailableMoves(FieldType.TableOpen, this._deckAndPileController.TopOfPile) == 0
-                && player.HandSize == 0
-                && player.OpenCards != 0
-            )
-        ) this.PickUpPile(player);
+        private void PickUpPile(HandController player)
+        {
+            foreach (var card in this.deckAndPileController.GetPileContent())
+            {
+                player.Deal(FieldType.Hand, card);
+            }
+            this.deckAndPileController.FlushPile();
+        }
+
+        private void DrawFromDeck(HandController player)
+        {
+            while (player.handSize < 3 && this._deck.Count > 0)
+            {
+                this.deckAndPileController.Draw(this._deck[0]);
+                player.Deal(FieldType.Hand, this._deck[0]);
+                this._deck.Remove(this._deck[0]);
+            }
+        }
+
+        private void CheckMovePossibilityAndPickUpPile(HandController player)
+        {
+            if (
+                (
+                    player.CountAvailableMoves(FieldType.Hand, this.deckAndPileController.TopOfPile) == 0
+                    && player.handSize != 0
+                )
+                || (
+                    player.CountAvailableMoves(FieldType.TableOpen, this.deckAndPileController.TopOfPile) == 0
+                    && player.handSize == 0
+                    && player.openCards != 0
+                )
+            ) this.PickUpPile(player);
+        }
     }
 }
