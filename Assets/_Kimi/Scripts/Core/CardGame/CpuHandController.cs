@@ -76,7 +76,7 @@ namespace _Kimi.Scripts.Core.CardGame
             {
                 if ((int)entry.Value.CardRank != lowestAdmissible) continue;
                 this.ToggleSelect(entry.Value);
-                if (lowestAdmissible == 2 || lowestAdmissible == 5 || lowestAdmissible == 10) break;
+                if (lowestAdmissible is 2 or 5 or 10) break;
             }
         }
     }
