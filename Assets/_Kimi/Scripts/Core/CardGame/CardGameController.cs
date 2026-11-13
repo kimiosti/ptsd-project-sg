@@ -153,10 +153,12 @@ namespace _Kimi.Scripts.Core.CardGame
 
                         this.CheckMovePossibilityAndPickUpPile(this.cpuHandController);
 
-                        this.deckAndPileController.AddToPile(
-                            this.cpuHandController.PlayCard(this.deckAndPileController.TopOfPile)
-                        );
-                        this.CheckAndFlushPile();
+                        this.cpuHandController.SelectCards(this.deckAndPileController.TopOfPile);
+                        foreach (var card in this.cpuHandController.Selected)
+                        {
+                            this.deckAndPileController.AddToPile(card);
+                            this.CheckAndFlushPile();
+                        }
                         this.cpuHandController.PlaySelected();
 
                         this.DrawFromDeck(this.cpuHandController);
