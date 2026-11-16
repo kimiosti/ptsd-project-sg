@@ -4,7 +4,6 @@ using System.Linq;
 using _Kimi.Scripts.Core.Utils;
 using _Kimi.Scripts.Gameplay.CardGame;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 // TODO - implement CPU exchange behavior
 // TODO - check game win conditions

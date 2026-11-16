@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using _Kimi.Scripts.Gameplay.CardGame;
 using _Kimi.Scripts.UI.CardGame;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace _Kimi.Scripts.Core.CardGame
 {
