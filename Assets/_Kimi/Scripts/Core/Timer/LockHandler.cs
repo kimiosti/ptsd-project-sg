@@ -21,7 +21,6 @@ namespace _Kimi.Scripts.Core.Timer
             var now = DateTime.Now;
             var timeSinceLock = now.Subtract(DateTime.Parse(File.ReadAllText(FileReferencePath)));
             return timeSinceLock < LockDuration;
-
         }
     }
 }
